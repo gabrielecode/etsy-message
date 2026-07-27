@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Buon Compleanno Elena! ✨</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #03140c;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #d1fae5;
+    }
+
+    #canvas-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Touch Guidance Overlay */
+    #interactive-prompt {
+      position: fixed;
+      top: 15%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      text-align: center;
+      pointer-events: none;
+      transition: opacity 0.8s ease, transform 0.8s ease;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    #interactive-prompt.hidden {
+      opacity: 0;
+      transform: translate(-50%, -20px);
+      pointer-events: none;
+    }
+
+    .prompt-badge {
+      background: rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: #d1fae5;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(52, 211, 153, 0.8);
+      animation: pulseGlow 2s infinite ease-in-out;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 10px rgba(52, 211, 153, 0.8); transform: scale(1); }
+      50% { box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(52, 211, 153, 0.8); transform: scale(1.03); }
+    }
+
+    .progress-bar-wrap {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(135deg, #34d399 0%, #fbbf24 100%);
+      border-radius: 10px;
+      transition: width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Main Card Container */
+    #card-wrapper {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-y: auto;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 1.2s;
+    }
+
+    #card-wrapper.visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    .glass-card {
+      width: 100%;
+      max-width: 580px;
+      margin: auto;
+      background: rgba(6, 32, 20, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      border-radius: 24px;
+      padding: 32px 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+      transform: translateY(30px) scale(0.95);
+      transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #card-wrapper.visible .glass-card {
+      transform: translateY(0) scale(1);
+    }
+
+    /* Card Sparkle Decorative Header */
+    .card-header-icon {
+      text-align: center;
+      font-size: 32px;
+      margin-bottom: 12px;
+      animation: floatSparkle 3s ease-in-out infinite;
+    }
+
+    @keyframes floatSparkle {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-6px) rotate(8deg); }
+    }
+
+    .card-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 32px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.2;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #34d399 0%, #fbbf24 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 8px rgba(52, 211, 153, 0.8));
+    }
+
+    @media (min-width: 640px) {
+      .glass-card { padding: 40px 36px; }
+      .card-title { font-size: 40px; }
+    }
+
+    .card-body {
+      font-size: 15px;
+      line-height: 1.7;
+      color: rgba(255, 255, 255, 0.92);
+      margin-bottom: 24px;
+      text-align: center;
+      font-weight: 300;
+    }
+
+    .msg-paragraph {
+      margin-bottom: 12px;
+    }
+
+    /* Photos Grid */
+    .photos-grid {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .photos-grid.count-1 { grid-template-columns: 1fr; }
+    .photos-grid.count-2 { grid-template-columns: 1fr 1fr; }
+    .photos-grid.count-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+    @media (max-width: 480px) {
+      .photos-grid.count-3 { grid-template-columns: 1fr; }
+    }
+
+    .photo-card {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      aspect-ratio: 4 / 3;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+
+    .photo-card:hover {
+      transform: scale(1.03);
+      border-color: #34d399;
+    }
+
+    .photo-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .photo-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      color: #fff;
+    }
+
+    .photo-card:hover .photo-overlay {
+      opacity: 1;
+    }
+
+    /* Audio Widget */
+    .audio-player-widget {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .audio-play-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #34d399 0%, #fbbf24 100%);
+      border: none;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(52, 211, 153, 0.8);
+      transition: transform 0.2s ease;
+    }
+
+    .audio-play-btn:active {
+      transform: scale(0.92);
+    }
+
+    .audio-info {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .audio-title {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #fff;
+    }
+
+    .audio-sub {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Lightbox Modal */
+    #lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease;
+    }
+
+    #lightbox.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #lightbox img {
+      max-width: 90vw;
+      max-height: 85vh;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      object-fit: contain;
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      color: #fff;
+      font-size: 32px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      line-height: 1;
+    }
+
+    /* Custom CSS if provided */
+    
+  </style>
+</head>
+<body>
+
+  <div id="canvas-container">
+    <canvas id="constellation-canvas"></canvas>
+  </div>
+
+  <div id="interactive-prompt">
+    <div class="prompt-badge">
+      ✨ Tocca lo schermo per accendere le stelle: <span id="touch-count">0</span> / 10
+    </div>
+    <div class="progress-bar-wrap">
+      <div id="progress-fill" class="progress-bar-fill"></div>
+    </div>
+  </div>
+
+  <div id="card-wrapper">
+    <div class="glass-card">
+      <div class="card-header-icon">✨</div>
+      <h1 class="card-title">Buon Compleanno Elena! ✨</h1>
+      
+      <div class="card-body">
+        <p class="msg-paragraph">In questo giorno speciale, volevo regalarti un frammento di cielo accendendo per te le stelle più luminose.</p><br/><p class="msg-paragraph">Che il tuo anno sia colmo di gioia, avventure indimenticabili e sogni realizzati. Sei una persona unica e speciale!</p><br/><p class="msg-paragraph">Con tutto il mio affetto,</p>
+      </div>
+
+      
+
+      
+        <div class="audio-player-widget">
+          <button id="audio-btn" class="audio-play-btn" onclick="toggleAudio()" aria-label="Play/Pause Musica">
+            <svg id="play-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <svg id="pause-icon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="display:none;">
+              <rect x="6" y="4" width="4" height="16"></rect>
+              <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+          </button>
+          <div class="audio-info">
+            <div class="audio-title">Musica della Costellazione</div>
+            <div id="audio-status" class="audio-sub">Tocca per riprodurre l'audio</div>
+          </div>
+        </div>
+        <audio id="bg-audio" loop preload="auto" src="https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=celestial-piano-10123.mp3"></audio>
+      
+    </div>
+  </div>
+
+  <div id="lightbox" onclick="closeLightbox()">
+    <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <img id="lightbox-img" src="" alt="Zoom Foto"/>
+  </div>
+
+  <script>
+    // Configuration Data
+    const REQUIRED_TOUCHES = 10;
+    const PRIMARY_COLOR = "#34d399";
+    const SECONDARY_COLOR = "#fbbf24";
+    const GLOW_COLOR = "rgba(52, 211, 153, 0.8)";
+    const LINE_COLOR = "rgba(251, 191, 36, 0.4)";
+    const CARD_IMAGES = [];
+
+    let currentTouches = 0;
+    let unlocked = false;
+
+    // Canvas 3D / Interactive Constellation Setup
+    const canvas = document.getElementById('constellation-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function resizeCanvas() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Background Stars
+    const stars = [];
+    const STAR_COUNT = Math.min(Math.floor((width * height) / 3500), 180);
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+      stars.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: Math.random() * 1.8 + 0.3,
+        alpha: Math.random(),
+        speed: Math.random() * 0.02 + 0.005,
+        twinkleSpeed: Math.random() * 0.03 + 0.01
+      });
+    }
+
+    // Touch / Interactive Particle System
+    const particles = [];
+    
+    class Particle {
+      constructor(x, y, isBurst = false) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * (isBurst ? 8 : 2.5);
+        this.vy = (Math.random() - 0.5) * (isBurst ? 8 : 2.5);
+        this.radius = Math.random() * (isBurst ? 4 : 3) + 1.5;
+        this.alpha = 1;
+        this.decay = Math.random() * 0.012 + 0.005;
+        this.color = Math.random() > 0.5 ? PRIMARY_COLOR : SECONDARY_COLOR;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+        this.alpha -= this.decay;
+      }
+
+      draw(context) {
+        context.save();
+        context.globalAlpha = Math.max(0, this.alpha);
+        context.shadowBlur = 12;
+        context.shadowColor = GLOW_COLOR;
+        context.fillStyle = this.color;
+        context.beginPath();
+        context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        context.fill();
+        context.restore();
+      }
+    }
+
+    // Touch / Interaction Event Handler
+    function handleInteraction(x, y) {
+      if (unlocked) {
+        // Spawn aesthetic particles on touch after unlock
+        for (let i = 0; i < 3; i++) {
+          particles.push(new Particle(x, y));
+        }
+        return;
+      }
+
+      currentTouches++;
+      
+      // Update UI Progress
+      const touchSpan = document.getElementById('touch-count');
+      const progressFill = document.getElementById('progress-fill');
+      if (touchSpan) touchSpan.textContent = Math.min(currentTouches, REQUIRED_TOUCHES);
+      if (progressFill) progressFill.style.width = Math.min((currentTouches / REQUIRED_TOUCHES) * 100, 100) + '%';
+
+      // Spawn constellation particles
+      for (let i = 0; i < 8; i++) {
+        particles.push(new Particle(x, y));
+      }
+
+      // Check unlock threshold
+      if (currentTouches >= REQUIRED_TOUCHES && !unlocked) {
+        triggerUnlockSequence(x, y);
+      }
+    }
+
+    function triggerUnlockSequence(burstX, burstY) {
+      unlocked = true;
+
+      // Fireworks burst
+      for (let i = 0; i < 60; i++) {
+        particles.push(new Particle(burstX || width / 2, burstY || height / 2, true));
+      }
+
+      // Hide prompt
+      const prompt = document.getElementById('interactive-prompt');
+      if (prompt) prompt.classList.add('hidden');
+
+      // Reveal card
+      setTimeout(() => {
+        const wrapper = document.getElementById('card-wrapper');
+        if (wrapper) wrapper.classList.add('visible');
+        attemptAutoPlayAudio();
+      }, 400);
+    }
+
+    // Pointer Events
+    window.addEventListener('pointerdown', (e) => {
+      handleInteraction(e.clientX, e.clientY);
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (e.buttons > 0) {
+        handleInteraction(e.clientX, e.clientY);
+      }
+    });
+
+    // Animation Loop (60fps)
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+
+      // 1. Draw Background Stars
+      for (let star of stars) {
+        star.alpha += star.twinkleSpeed;
+        if (star.alpha > 1 || star.alpha < 0.2) {
+          star.twinkleSpeed = -star.twinkleSpeed;
+        }
+        star.y -= star.speed;
+        if (star.y < 0) star.y = height;
+
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.1, star.alpha)})`;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 2. Update & Draw Interactive Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+        } else {
+          p.draw(ctx);
+        }
+      }
+
+      // 3. Connect Constellation Lines
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 120) {
+            ctx.save();
+            ctx.globalAlpha = (1 - dist / 120) * Math.min(particles[i].alpha, particles[j].alpha) * 0.7;
+            ctx.strokeStyle = LINE_COLOR;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // Audio Logic
+    const audio = document.getElementById('bg-audio');
+    const playIcon = document.getElementById('play-icon');
+    const pauseIcon = document.getElementById('pause-icon');
+    const audioStatus = document.getElementById('audio-status');
+
+    function toggleAudio() {
+      if (!audio) return;
+      if (audio.paused) {
+        audio.play().then(() => {
+          if (playIcon) playIcon.style.display = 'none';
+          if (pauseIcon) pauseIcon.style.display = 'block';
+          if (audioStatus) audioStatus.textContent = 'In riproduzione ♪';
+        }).catch(() => {
+          if (audioStatus) audioStatus.textContent = 'Tocca qui per avviare l'audio';
+        });
+      } else {
+        audio.pause();
+        if (playIcon) playIcon.style.display = 'block';
+        if (pauseIcon) pauseIcon.style.display = 'none';
+        if (audioStatus) audioStatus.textContent = 'In pausa';
+      }
+    }
+
+    function attemptAutoPlayAudio() {
+      if (audio && audio.paused) {
+        audio.play().then(() => {
+          if (playIcon) playIcon.style.display = 'none';
+          if (pauseIcon) pauseIcon.style.display = 'block';
+          if (audioStatus) audioStatus.textContent = 'In riproduzione ♪';
+        }).catch(() => {
+          // Mobile browser policy required user gesture
+          if (audioStatus) audioStatus.textContent = 'Tocca per ascoltare la musica ♪';
+        });
+      }
+    }
+
+    // Lightbox Logic
+    function openLightbox(index) {
+      const lightbox = document.getElementById('lightbox');
+      const img = document.getElementById('lightbox-img');
+      if (lightbox && img && CARD_IMAGES[index]) {
+        img.src = CARD_IMAGES[index];
+        lightbox.classList.add('active');
+      }
+    }
+
+    function closeLightbox() {
+      const lightbox = document.getElementById('lightbox');
+      if (lightbox) lightbox.classList.remove('active');
+    }
+  </script>
+</body>
+</html>

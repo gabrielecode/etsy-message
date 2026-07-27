@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HAPPY BIRTHDAY ELENA!</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Great+Vibes&family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;1,300&family=Orbitron:wght@500;700;900&family=Playfair+Display:ital,wght@0,600;0,800;1,400&display=swap" rel="stylesheet">
+
+  <!-- Libraries: Three.js r128 & GSAP 3.12.2 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #05050a;
+      font-family: 'Montserrat', sans-serif;
+      color: #ffffff;
+    }
+
+    #webgl-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      touch-action: none;
+    }
+
+    /* UI Overlay */
+    .app-viewport {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-y: auto;
+      pointer-events: none;
+    }
+
+    .card-container {
+      pointer-events: auto;
+      width: 100%;
+      max-width: 520px;
+      background: rgba(18, 18, 28, 0.55);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      border-radius: 28px;
+      padding: 32px 28px;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(30px) scale(0.95);
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      margin: auto 0;
+    }
+
+    .card-container.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Preset Specific Typography */
+    .preset-pop3d .card-title {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 900;
+      font-size: 2.2rem;
+      background: linear-gradient(135deg, #ff416c, #ff4b2b, #ffb347);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 10px 20px rgba(255, 75, 43, 0.3);
+      letter-spacing: -0.5px;
+    }
+
+    .preset-galaxy .card-title {
+      font-family: 'Great Vibes', cursive;
+      font-size: 3.2rem;
+      color: #ffd700;
+      text-shadow: 0 0 15px rgba(255, 215, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.3);
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+
+    .preset-wedding .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #fceabb, #f8b500);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 1px;
+    }
+
+    .preset-cyber .card-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: #00f0ff;
+      text-shadow: 0 0 10px #00f0ff, 0 0 20px #ff007f;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .preset-candles .card-title {
+      font-family: 'Cinzel', serif;
+      font-size: 2.2rem;
+      color: #ffe8b6;
+      text-shadow: 0 0 12px rgba(255, 216, 150, 0.5);
+      letter-spacing: 1.5px;
+    }
+
+    .preset-custom .card-title {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      font-size: 2.2rem;
+      color: #a855f7;
+      text-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
+    }
+
+    .card-message {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.9);
+      margin: 18px 0 24px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-weight: 300;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    /* Scrollbar */
+    .card-message::-webkit-scrollbar {
+      width: 4px;
+    }
+    .card-message::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+    }
+
+    /* Image Gallery Carousel */
+    .gallery-container {
+      margin: 20px 0;
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      background: #000;
+    }
+
+    .gallery-slide {
+      width: 100%;
+      height: 240px;
+      object-fit: cover;
+      display: block;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      cursor: pointer;
+    }
+
+    .gallery-controls {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .gallery-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .gallery-dot.active {
+      background: #ffffff;
+      transform: scale(1.3);
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+    }
+
+    /* Action Buttons */
+    .action-btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 24px;
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+
+    .btn-action:active {
+      transform: scale(0.96);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 10px 25px rgba(37, 211, 102, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.22);
+      transform: translateY(-2px);
+    }
+
+    /* Floating Touch Hint & Audio Control */
+    .top-controls {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+      display: flex;
+      gap: 10px;
+    }
+
+    .control-icon-btn {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(18, 18, 28, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      transition: all 0.3s ease;
+    }
+
+    .control-icon-btn:hover {
+      transform: scale(1.1);
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .touch-hint {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 8px 18px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.8);
+      pointer-events: none;
+      animation: pulseHint 2s infinite;
+    }
+
+    @keyframes pulseHint {
+      0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+      50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+    }
+
+    /* Modal Image Lightbox */
+    .lightbox-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.9);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      padding: 20px;
+    }
+
+    .lightbox-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .lightbox-img {
+      max-width: 90%;
+      max-height: 85vh;
+      border-radius: 12px;
+      box-shadow: 0 0 30px rgba(255,255,255,0.2);
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body class="preset-wedding">
+
+  <!-- Canvas WebGL Background -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- Top Floating Controls -->
+  <div class="top-controls">
+    <button id="audio-btn" class="control-icon-btn" title="Musica di sottofondo">
+      <svg id="icon-sound-on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+      <svg id="icon-sound-off" class="hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9l3 3v7l-5-4H2V9h5l1.17-.94"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+    </button>
+  </div>
+
+  <!-- Touch Interaction Hint -->
+  <div class="touch-hint">✦ Tocca lo schermo per interagire ✦</div>
+
+  <!-- Main Glassmorphic Card Container -->
+  <div class="app-viewport">
+    <div class="card-container" id="main-card">
+      <h1 class="card-title">HAPPY BIRTHDAY ELENA!</h1>
+
+      <p class="card-message">In questo giorno speciale, ti auguriamo un anno ricco di gioia, avventure indimenticabili e sogni realizzati! Con tantissimo affetto.</p>
+
+      <!-- Images Carousel -->
+      <div id="gallery-root"></div>
+
+      <!-- RSVP and Action Buttons -->
+      <div class="action-btn-group">
+        <a href="https://wa.me/393331234567?text=Ciao!%20Ho%20visto%20la%20splendida%20e-card%20e%20voglio%20fare%20gli%20auguri!" target="_blank" rel="noopener noreferrer" class="btn-action btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+            Conferma Presenza (WhatsApp)
+          </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox-overlay" id="lightbox">
+    <img src="" alt="Ingrandimento" class="lightbox-img" id="lightbox-img">
+  </div>
+
+  <!-- Audio Player -->
+  <audio id="bg-audio" loop preload="auto"><source src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_c26880922e.mp3?filename=happy-birthday-101140.mp3" type="audio/mpeg"></audio>
+
+  <script>
+    // Embedded Base64 Images Array
+    const rawImages = [];
+    let currentImageIndex = 0;
+
+    // Build Gallery UI
+    const galleryRoot = document.getElementById('gallery-root');
+    if (rawImages && rawImages.length > 0) {
+      const container = document.createElement('div');
+      container.className = 'gallery-container';
+      
+      const img = document.createElement('img');
+      img.className = 'gallery-slide';
+      img.src = rawImages[0];
+      img.alt = 'Foto allegata';
+      
+      img.addEventListener('click', () => {
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        lightboxImg.src = rawImages[currentImageIndex];
+        lightbox.classList.add('active');
+      });
+
+      container.appendChild(img);
+
+      if (rawImages.length > 1) {
+        const dotsRow = document.createElement('div');
+        dotsRow.className = 'gallery-controls';
+
+        rawImages.forEach((_, idx) => {
+          const dot = document.createElement('div');
+          dot.className = 'gallery-dot' + (idx === 0 ? ' active' : '');
+          dot.addEventListener('click', (e) => {
+            e.stopPropagation();
+            currentImageIndex = idx;
+            img.src = rawImages[idx];
+            document.querySelectorAll('.gallery-dot').forEach((d, i) => {
+              d.classList.toggle('active', i === idx);
+            });
+          });
+          dotsRow.appendChild(dot);
+        });
+
+        // Auto slide carousel every 4s
+        setInterval(() => {
+          currentImageIndex = (currentImageIndex + 1) % rawImages.length;
+          img.src = rawImages[currentImageIndex];
+          document.querySelectorAll('.gallery-dot').forEach((d, i) => {
+            d.classList.toggle('active', i === currentImageIndex);
+          });
+        }, 4000);
+
+        container.appendChild(dotsRow);
+      }
+
+      galleryRoot.appendChild(container);
+    }
+
+    // Lightbox Close
+    document.getElementById('lightbox').addEventListener('click', () => {
+      document.getElementById('lightbox').classList.remove('active');
+    });
+
+    // Audio Control
+    const bgAudio = document.getElementById('bg-audio');
+    const audioBtn = document.getElementById('audio-btn');
+    let isPlaying = false;
+
+    if (bgAudio && audioBtn) {
+      function toggleAudio() {
+        if (isPlaying) {
+          bgAudio.pause();
+          document.getElementById('icon-sound-on').style.display = 'none';
+          document.getElementById('icon-sound-off').style.display = 'block';
+          isPlaying = false;
+        } else {
+          bgAudio.play().then(() => {
+            document.getElementById('icon-sound-on').style.display = 'block';
+            document.getElementById('icon-sound-off').style.display = 'none';
+            isPlaying = true;
+          }).catch(e => console.log('Audio autostart block:', e));
+        }
+      }
+
+      audioBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleAudio();
+      });
+
+      // Unlock audio context on first touch anywhere
+      document.addEventListener('click', () => {
+        if (!isPlaying && bgAudio) {
+          bgAudio.play().then(() => {
+            document.getElementById('icon-sound-on').style.display = 'block';
+            document.getElementById('icon-sound-off').style.display = 'none';
+            isPlaying = true;
+          }).catch(() => {});
+        }
+      }, { once: true });
+    }
+
+    // GSAP Entry Animation
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('main-card').classList.add('visible');
+      }, 300);
+    });
+
+    // ===================================================
+    // THREE.JS 3D INTERACTIVE CANVAS SYSTEM
+    // ===================================================
+    const canvas = document.getElementById('webgl-canvas');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 25;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const mouse = new THREE.Vector2();
+    const raycaster = new THREE.Raycaster();
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Interactive pointer movement
+    window.addEventListener('pointermove', (e) => {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    });
+
+    // ---------------------------------------------------
+    // PRESET SCENE BUILDERS
+    // ---------------------------------------------------
+    const presetType = "wedding";
+    let particleSystem, secondaryGroup = new THREE.Group();
+    scene.add(secondaryGroup);
+
+    if (presetType === 'pop3d') {
+      // 1. POP 3D BIRTHDAY / CAKE / CONFETTI
+      scene.fog = new THREE.FogExp2(0x1a0933, 0.02);
+
+      // Create 3D Gift Box / Cake
+      const boxGeo = new THREE.BoxGeometry(4, 4, 4);
+      const boxMat = new THREE.MeshPhongMaterial({ color: 0xff3366, shininess: 100 });
+      const giftBox = new THREE.Mesh(boxGeo, boxMat);
+      secondaryGroup.add(giftBox);
+
+      const ribbonGeo = new THREE.BoxGeometry(4.2, 4.2, 0.8);
+      const ribbonMat = new THREE.MeshPhongMaterial({ color: 0xffd700, shininess: 120 });
+      const ribbon = new THREE.Mesh(ribbonGeo, ribbonMat);
+      giftBox.add(ribbon);
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+      const dirLight = new THREE.DirectionalLight(0xffd700, 1.2);
+      dirLight.position.set(10, 20, 15);
+      scene.add(dirLight);
+
+      // 3D Confetti Particles
+      const confettiCount = 500;
+      const confettiGeo = new THREE.BufferGeometry();
+      const posArray = new Float32Array(confettiCount * 3);
+      const colorArray = new Float32Array(confettiCount * 3);
+
+      const colors = [0xff416c, 0x8a2be2, 0x00f0ff, 0xffd700, 0x00ff88];
+
+      for (let i = 0; i < confettiCount; i++) {
+        posArray[i * 3] = (Math.random() - 0.5) * 40;
+        posArray[i * 3 + 1] = (Math.random() - 0.5) * 40;
+        posArray[i * 3 + 2] = (Math.random() - 0.5) * 30;
+
+        const c = new THREE.Color(colors[Math.floor(Math.random() * colors.length)]);
+        colorArray[i * 3] = c.r;
+        colorArray[i * 3 + 1] = c.g;
+        colorArray[i * 3 + 2] = c.b;
+      }
+
+      confettiGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+      confettiGeo.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
+
+      const confettiMat = new THREE.PointsMaterial({
+        size: 0.6,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.9
+      });
+
+      particleSystem = new THREE.Points(confettiGeo, confettiMat);
+      scene.add(particleSystem);
+
+      // Explosive confetti on touch
+      window.addEventListener('pointerdown', (e) => {
+        gsap.to(giftBox.scale, { x: 1.3, y: 1.3, z: 1.3, duration: 0.2, yoyo: true, repeat: 1 });
+        gsap.to(giftBox.rotation, { y: giftBox.rotation.y + Math.PI, duration: 0.8 });
+      });
+
+    } else if (presetType === 'galaxy') {
+      // 2. 3D GALAXY & LOVE CONSTELLATION
+      const starCount = 1500;
+      const starGeo = new THREE.BufferGeometry();
+      const starPos = new Float32Array(starCount * 3);
+      const starColors = new Float32Array(starCount * 3);
+
+      for (let i = 0; i < starCount; i++) {
+        const radius = Math.random() * 35;
+        const spinAngle = radius * 0.4;
+        const branchAngle = ((i % 3) * 2 * Math.PI) / 3;
+
+        const randomX = (Math.random() - 0.5) * 3;
+        const randomY = (Math.random() - 0.5) * 3;
+        const randomZ = (Math.random() - 0.5) * 3;
+
+        starPos[i * 3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
+        starPos[i * 3 + 1] = randomY;
+        starPos[i * 3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
+
+        // Gold & Cyan Nebula colors
+        const c = Math.random() > 0.4 ? new THREE.Color(0xffd700) : new THREE.Color(0x00f0ff);
+        starColors[i * 3] = c.r;
+        starColors[i * 3 + 1] = c.g;
+        starColors[i * 3 + 2] = c.b;
+      }
+
+      starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+      starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+
+      const starMat = new THREE.PointsMaterial({
+        size: 0.25,
+        vertexColors: true,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        opacity: 0.85
+      });
+
+      particleSystem = new THREE.Points(starGeo, starMat);
+      scene.add(particleSystem);
+
+    } else if (presetType === 'wedding') {
+      // 3. WEDDING & PETAL RAIN
+      const petalCount = 300;
+      const petalGeo = new THREE.BufferGeometry();
+      const petalPos = new Float32Array(petalCount * 3);
+      const petalSpeeds = [];
+
+      for (let i = 0; i < petalCount; i++) {
+        petalPos[i * 3] = (Math.random() - 0.5) * 35;
+        petalPos[i * 3 + 1] = Math.random() * 30;
+        petalPos[i * 3 + 2] = (Math.random() - 0.5) * 20;
+
+        petalSpeeds.push({
+          y: Math.random() * 0.05 + 0.02,
+          x: Math.random() * 0.02 - 0.01,
+          rot: Math.random() * 0.03
+        });
+      }
+
+      petalGeo.setAttribute('position', new THREE.BufferAttribute(petalPos, 3));
+
+      const petalMat = new THREE.PointsMaterial({
+        size: 0.5,
+        color: 0xff69b4,
+        transparent: true,
+        opacity: 0.8
+      });
+
+      particleSystem = new THREE.Points(petalGeo, petalMat);
+      particleSystem.userData = { speeds: petalSpeeds };
+      scene.add(particleSystem);
+
+      // Gold ring 3D geometry
+      const ringGeo = new THREE.TorusGeometry(3, 0.2, 16, 100);
+      const ringMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.9, roughness: 0.1 });
+      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+      ringMesh.position.set(0, 0, -5);
+      secondaryGroup.add(ringMesh);
+
+      const light = new THREE.PointLight(0xfff5cc, 2, 50);
+      light.position.set(5, 5, 10);
+      scene.add(light);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+
+    } else if (presetType === 'cyber') {
+      // 4. CYBER NEON VORTEX
+      const vortexCount = 800;
+      const vortexGeo = new THREE.BufferGeometry();
+      const vPos = new Float32Array(vortexCount * 3);
+      const vColors = new Float32Array(vortexCount * 3);
+
+      for (let i = 0; i < vortexCount; i++) {
+        const angle = (i / vortexCount) * Math.PI * 20;
+        const radius = 2 + (i / vortexCount) * 15;
+        vPos[i * 3] = Math.cos(angle) * radius;
+        vPos[i * 3 + 1] = Math.sin(angle) * radius;
+        vPos[i * 3 + 2] = - (i / vortexCount) * 40;
+
+        const c = i % 2 === 0 ? new THREE.Color(0x00f0ff) : new THREE.Color(0xff007f);
+        vColors[i * 3] = c.r;
+        vColors[i * 3 + 1] = c.g;
+        vColors[i * 3 + 2] = c.b;
+      }
+
+      vortexGeo.setAttribute('position', new THREE.BufferAttribute(vPos, 3));
+      vortexGeo.setAttribute('color', new THREE.BufferAttribute(vColors, 3));
+
+      const vortexMat = new THREE.PointsMaterial({
+        size: 0.4,
+        vertexColors: true,
+        blending: THREE.AdditiveBlending,
+        transparent: true
+      });
+
+      particleSystem = new THREE.Points(vortexGeo, vortexMat);
+      scene.add(particleSystem);
+
+    } else if (presetType === 'candles') {
+      // 5. IN MEMORY & CANDLE LIGHTS
+      const candleCount = 200;
+      const candleGeo = new THREE.BufferGeometry();
+      const cPos = new Float32Array(candleCount * 3);
+
+      for (let i = 0; i < candleCount; i++) {
+        cPos[i * 3] = (Math.random() - 0.5) * 30;
+        cPos[i * 3 + 1] = (Math.random() - 0.5) * 30;
+        cPos[i * 3 + 2] = (Math.random() - 0.5) * 20;
+      }
+
+      candleGeo.setAttribute('position', new THREE.BufferAttribute(cPos, 3));
+
+      const candleMat = new THREE.PointsMaterial({
+        size: 0.6,
+        color: 0xffb74d,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        opacity: 0.95
+      });
+
+      particleSystem = new THREE.Points(candleGeo, candleMat);
+      scene.add(particleSystem);
+
+      // Moon geometry in background
+      const moonGeo = new THREE.SphereGeometry(3, 32, 32);
+      const moonMat = new THREE.MeshBasicMaterial({ color: 0xfff8e7 });
+      const moonMesh = new THREE.Mesh(moonGeo, moonMat);
+      moonMesh.position.set(8, 10, -15);
+      secondaryGroup.add(moonMesh);
+
+    } else {
+      // CUSTOM PROMPT PROCEDURAL GENERATION
+      const customCount = 1000;
+      const customGeo = new THREE.BufferGeometry();
+      const customPos = new Float32Array(customCount * 3);
+      const customCol = new Float32Array(customCount * 3);
+
+      const themeCol1 = new THREE.Color("#a855f7");
+      const themeCol2 = new THREE.Color("#ec4899");
+
+      for (let i = 0; i < customCount; i++) {
+        customPos[i * 3] = (Math.random() - 0.5) * 35;
+        customPos[i * 3 + 1] = (Math.random() - 0.5) * 35;
+        customPos[i * 3 + 2] = (Math.random() - 0.5) * 25;
+
+        const mixColor = Math.random() > 0.5 ? themeCol1 : themeCol2;
+        customCol[i * 3] = mixColor.r;
+        customCol[i * 3 + 1] = mixColor.g;
+        customCol[i * 3 + 2] = mixColor.b;
+      }
+
+      customGeo.setAttribute('position', new THREE.BufferAttribute(customPos, 3));
+      customGeo.setAttribute('color', new THREE.BufferAttribute(customCol, 3));
+
+      const customMat = new THREE.PointsMaterial({
+        size: 0.35,
+        vertexColors: true,
+        blending: THREE.AdditiveBlending,
+        transparent: true
+      });
+
+      particleSystem = new THREE.Points(customGeo, customMat);
+      scene.add(particleSystem);
+    }
+
+    // ---------------------------------------------------
+    // ANIMATION LOOP (60 FPS FLUID)
+    // ---------------------------------------------------
+    let clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const elapsedTime = clock.getElapsedTime();
+
+      // Parallax effect with mouse
+      scene.rotation.y = THREE.MathUtils.lerp(scene.rotation.y, mouse.x * 0.2, 0.05);
+      scene.rotation.x = THREE.MathUtils.lerp(scene.rotation.x, mouse.y * 0.2, 0.05);
+
+      if (particleSystem) {
+        particleSystem.rotation.y = elapsedTime * 0.05;
+
+        // Special falling physics for petal rain
+        if (presetType === 'wedding' && particleSystem.userData.speeds) {
+          const positions = particleSystem.geometry.attributes.position.array;
+          const speeds = particleSystem.userData.speeds;
+
+          for (let i = 0; i < speeds.length; i++) {
+            positions[i * 3 + 1] -= speeds[i].y;
+            positions[i * 3] += Math.sin(elapsedTime + i) * 0.01;
+
+            if (positions[i * 3 + 1] < -15) {
+              positions[i * 3 + 1] = 15;
+            }
+          }
+          particleSystem.geometry.attributes.position.needsUpdate = true;
+        }
+
+        // Rising candles physics
+        if (presetType === 'candles') {
+          const positions = particleSystem.geometry.attributes.position.array;
+          for (let i = 0; i < positions.length / 3; i++) {
+            positions[i * 3 + 1] += 0.015;
+            positions[i * 3] += Math.sin(elapsedTime * 2 + i) * 0.01;
+
+            if (positions[i * 3 + 1] > 15) {
+              positions[i * 3 + 1] = -15;
+            }
+          }
+          particleSystem.geometry.attributes.position.needsUpdate = true;
+        }
+      }
+
+      if (secondaryGroup) {
+        secondaryGroup.rotation.y = elapsedTime * 0.2;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
